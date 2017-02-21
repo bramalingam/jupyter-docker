@@ -1,4 +1,15 @@
-FROM jupyter/notebook:latest
+FROM jupyter/datascience-notebook:latest
+
+MAINTAINER ome-devel@lists.openmicroscopy.org.uk
+
+################################################################################
+# Custom
+################################################################################
+
+USER root
+RUN usermod -l $NB_USER omero
+ENV NB_USER omero
+
 
 RUN mkdir /omero-install
 WORKDIR /omero-install
@@ -11,12 +22,12 @@ RUN \
 	bash -eux step01_ubuntu1404_ice_deps.sh && \
 	OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh
 
-USER omero
 WORKDIR /home/omero
 RUN virtualenv --system-site-packages /home/omero/omeroenv && /home/omero/omeroenv/bin/pip install omego
 RUN /home/omero/omeroenv/bin/omego install --ice 3.5 --no-start
 RUN /home/omero/omeroenv/bin/pip install markdown
 RUN /home/omero/omeroenv/bin/pip install -U matplotlib
+RUN /home/omero/omeroenv/bin/pip install cython
 RUN /home/omero/omeroenv/bin/pip install pandas sklearn seaborn
 RUN /home/omero/omeroenv/bin/pip install joblib
 
@@ -43,3 +54,4 @@ RUN git clone https://github.com/damianavila/RISE /tmp/RISE && \
     cd /tmp/RISE && /home/omero/omeroenv/bin/python setup.py install
 
 CMD ["env", "PYTHONPATH=/home/omero/OMERO-CURRENT/lib/python", "/home/omero/omeroenv/bin/python", "/usr/local/bin/jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
+EXPOSE 8888
