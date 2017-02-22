@@ -7,38 +7,29 @@ MAINTAINER ome-devel@lists.openmicroscopy.org.uk
 ################################################################################
 
 USER root
-RUN usermod -l $NB_USER omero
-ENV NB_USER omero
 
 
 RUN mkdir /omero-install
 WORKDIR /omero-install
 RUN git clone git://github.com/ome/omero-install .
 WORKDIR /omero-install/linux
+# Replace: OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh
+RUN usermod -l omero $NB_USER && mkdir -p /home/omero/data && chown omero /home/omero/data && chmod a+X /home/omero
+ENV NB_USER omero
 RUN \
 	bash -eux step01_ubuntu1404_init.sh && \
-	bash -eux step01_ubuntu1404_java_deps.sh && \
-	bash -eux step01_ubuntu1404_deps.sh && \
-	bash -eux step01_ubuntu1404_ice_deps.sh && \
-	OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh
+	bash -eux step01_debian8_java_deps.sh && \
+	bash -eux step01_debian8_deps.sh && \
+	bash -eux step01_debian8_ice_deps.sh
 
+RUN chown -R omero /home/omero
+USER omero
 WORKDIR /home/omero
 RUN virtualenv --system-site-packages /home/omero/omeroenv && /home/omero/omeroenv/bin/pip install omego
 RUN /home/omero/omeroenv/bin/omego install --ice 3.5 --no-start
-RUN /home/omero/omeroenv/bin/pip install markdown
-RUN /home/omero/omeroenv/bin/pip install -U matplotlib
-RUN /home/omero/omeroenv/bin/pip install cython
-RUN /home/omero/omeroenv/bin/pip install pandas sklearn seaborn
-RUN /home/omero/omeroenv/bin/pip install joblib
+RUN /home/omero/omeroenv/bin/pip install markdown sklearn joblib
 
-USER root
-RUN apt-get install -y libigraph0-dev
-RUN add-apt-repository ppa:igraph/ppa
-RUN apt-get update
-RUN apt-get install python-igraph
-
-USER omero
-RUN /home/omero/omeroenv/bin/pip install py2cytoscape
+RUN conda install -c bioconda python-igraph=0.7.1.post6
 RUN echo 'export PYTHONPATH=$HOME/OMERO-CURRENT/lib/python' >> $HOME/.bashrc
 
 # Add a notebook profile.
