@@ -18,10 +18,12 @@ ENV NB_USER omero
 # Note: this replaces "OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh"
 
 ## Do omero-install
+ENV PATH=$CONDA_DIR/envs/python2/bin/:$PATH
 RUN mkdir /omero-install
 WORKDIR /omero-install
 RUN git clone git://github.com/ome/omero-install .
 WORKDIR /omero-install/linux
+ENV ICEVER=ice36
 RUN \
 	bash -eux step01_ubuntu1404_init.sh && \
 	bash -eux step01_debian8_java_deps.sh && \
@@ -30,16 +32,22 @@ RUN \
 
 ## Add other dependencies
 USER omero
+ENV PATH=$CONDA_DIR/envs/python2/bin/:$PATH
 WORKDIR /home/omero
-RUN virtualenv --system-site-packages /home/omero/omeroenv && /home/omero/omeroenv/bin/pip install omego
-RUN /home/omero/omeroenv/bin/omego install --ice 3.5 --no-start
-RUN /home/omero/omeroenv/bin/pip install markdown sklearn joblib
-RUN conda install -c bioconda python-igraph=0.7.1.post6
-RUN echo 'export PYTHONPATH=$HOME/OMERO-CURRENT/lib/python' >> $HOME/.bashrc
+RUN pip install omego && \
+    omego install --ice 3.6 --no-start && \
+    pip install markdown sklearn joblib && \
+    conda install -c bioconda python-igraph=0.7.1.post6 && \
+    echo 'export PYTHONPATH=$HOME/OMERO-CURRENT/lib/python' >> $HOME/.bashrc
+
+## Revert PATH
+ENV PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN echo /home/omero/OMERO-CURRENT/lib/python/ > /opt/conda/envs/python2/lib/python2.7/site-packages/omero.pth
+
 
 ## RISE
 RUN git clone https://github.com/damianavila/RISE /tmp/RISE && \
-    cd /tmp/RISE && /home/omero/omeroenv/bin/python setup.py install
+    cd /tmp/RISE && $CONDA_DIR/envs/python2/bin/python setup.py install
 
 ## Add a notebook profile.
 USER root
@@ -50,8 +58,8 @@ WORKDIR /notebooks
 RUN mkdir -p -m 700 $HOME/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> $HOME/.jupyter/jupyter_notebook_config.py
 
-RUN mkdir -p /home/omero/.local/share/jupyter/kernels/python2/
-COPY kernel.json /home/omero/.local/share/jupyter/kernels/python2/kernel.json
+# RUN mkdir -p /home/omero/.local/share/jupyter/kernels/python2/
+# COPY kernel.json /home/omero/.local/share/jupyter/kernels/python2/kernel.json
 
-CMD ["env", "PYTHONPATH=/home/omero/OMERO-CURRENT/lib/python", "/home/omero/omeroenv/bin/python", "/usr/local/bin/jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
-EXPOSE 8888
+#CMD ["env", "PYTHONPATH=/home/omero/OMERO-CURRENT/lib/python", "python", "/usr/local/bin/jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
+#EXPOSE 8888
