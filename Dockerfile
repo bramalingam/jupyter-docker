@@ -58,6 +58,18 @@ WORKDIR /notebooks
 RUN mkdir -p -m 700 $HOME/.jupyter/ && \
     echo "c.NotebookApp.ip = '*'" >> $HOME/.jupyter/jupyter_notebook_config.py
 
+
+## Install other R tools
+RUN pip install notedown
+RUN conda config --add channels bioconda && \
+    conda install --quiet --yes \
+    'r-mclust' \
+    'r-ggdendro' \
+    'r-igraph' \
+    'r-pheatmap'
+
+RUN echo "c.NotebookApp.base_url = '/embl'" >> $HOME/.jupyter/jupyter_notebook_config.py
+
 # RUN mkdir -p /home/omero/.local/share/jupyter/kernels/python2/
 # COPY kernel.json /home/omero/.local/share/jupyter/kernels/python2/kernel.json
 
