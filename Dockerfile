@@ -5,16 +5,19 @@ WORKDIR /omero-install
 RUN git clone git://github.com/ome/omero-install .
 WORKDIR /omero-install/linux
 RUN \
-	# bash -eux step01_ubuntu_init.sh && \
+	bash -eux step01_ubuntu_init.sh && \
 	bash -eux step01_ubuntu_java_deps.sh && \
 	bash -eux step01_ubuntu_deps.sh && \
-	bash -eux step01_ubuntu_ice_deps.sh && \
+	ICEVER=ice35 bash -eux step01_ubuntu_ice_deps.sh && \
 	OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh
+
+# Require for matplotlib
+RUN apt-get install -y libpng-dev libjpeg8-dev libfreetype6-dev
 
 USER omero
 WORKDIR /home/omero
 RUN virtualenv --system-site-packages /home/omero/omeroenv && /home/omero/omeroenv/bin/pip install omego
-RUN /home/omero/omeroenv/bin/omego install --ice 3.6 --no-start
+RUN /home/omero/omeroenv/bin/omego install --release 5.2.8 --ice 3.5 --no-start
 RUN /home/omero/omeroenv/bin/pip install markdown
 RUN /home/omero/omeroenv/bin/pip install -U matplotlib
 RUN /home/omero/omeroenv/bin/pip install pandas sklearn seaborn
