@@ -1,34 +1,30 @@
 FROM jupyter/notebook:latest
 
-RUN mkdir /omero-install
-WORKDIR /omero-install
-RUN git clone git://github.com/ome/omero-install .
-WORKDIR /omero-install/linux
-RUN \
-	# bash -eux step01_ubuntu_init.sh && \
-	bash -eux step01_ubuntu_java_deps.sh && \
-	bash -eux step01_ubuntu_deps.sh && \
-	bash -eux step01_ubuntu_ice_deps.sh && \
-	OMERO_DATA_DIR=/home/omero/data bash -eux step02_all_setup.sh
+# Matlab dependencies
+RUN apt-get update && apt-get install -y \
+    libpng12-dev libfreetype6-dev \
+    libblas-dev liblapack-dev gfortran build-essential xorg
 
-USER omero
-WORKDIR /home/omero
-RUN virtualenv --system-site-packages /home/omero/omeroenv && /home/omero/omeroenv/bin/pip install omego
-RUN /home/omero/omeroenv/bin/omego install --ice 3.6 --no-start
-RUN /home/omero/omeroenv/bin/pip install markdown
-RUN /home/omero/omeroenv/bin/pip install -U matplotlib
-RUN /home/omero/omeroenv/bin/pip install pandas sklearn seaborn
-RUN /home/omero/omeroenv/bin/pip install joblib
+# run the container like a matlab executable 
+# ENV PATH="/usr/local/MATLAB/from-host/bin:${PATH}"
+ENV PATH="/Applications/MATLAB_R2017a.app/bin:${PATH}"
+ENTRYPOINT ["matlab", "-logfile /var/log/matlab/matlab.log"]
 
-USER root
-RUN apt-get install -y libigraph0-dev
-RUN add-apt-repository ppa:igraph/ppa
-RUN apt-get update
-RUN apt-get install python-igraph
+# Get wget
+RUN apt-get install wget
 
-USER omero
-RUN /home/omero/omeroenv/bin/pip install py2cytoscape
-RUN echo 'export PYTHONPATH=$HOME/OMERO-CURRENT/lib/python' >> $HOME/.bashrc
+# Install 
+RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
+    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.3.1-Linux-x86_64.sh -O ~/anaconda.sh && \
+    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+    rm ~/anaconda.sh
+
+# Add matlab kernel
+RUN pip install --upgrade pip
+RUN pip3 install numpy
+RUN pip3 install pymatbridge
+RUN pip3 install matlab_kernel
+RUN python3 -m matlab_kernel install
 
 # Add a notebook profile.
 WORKDIR /notebooks
@@ -38,8 +34,4 @@ RUN mkdir -p -m 700 $HOME/.jupyter/ && \
 RUN mkdir -p /home/omero/.local/share/jupyter/kernels/python2/
 COPY kernel.json /home/omero/.local/share/jupyter/kernels/python2/kernel.json
 
-# RISE
-RUN git clone https://github.com/damianavila/RISE /tmp/RISE && \
-    cd /tmp/RISE && /home/omero/omeroenv/bin/python setup.py install
-
-CMD ["env", "PYTHONPATH=/home/omero/OMERO-CURRENT/lib/python", "/home/omero/omeroenv/bin/python", "/usr/local/bin/jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
+CMD ["env", "PYTHONPATH=/usr/local/bin/jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
