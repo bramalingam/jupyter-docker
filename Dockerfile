@@ -45,9 +45,6 @@ RUN conda install --name python2 --quiet --yes -c bioconda zeroc-ice && \
         pydot \
         tqdm
 
-# Install version of IDR-PY which is not dependent on geneinfo for entrez ids
-RUN /opt/conda/envs/python2/bin/pip install --upgrade 'git+https://github.com/bramalingam/idr-py@EMBLPredoc2017Notebooks'
-
 # Add idr-notebook library to path
 RUN echo /notebooks/library > /opt/conda/envs/python2/lib/python2.7/site-packages/idr-notebooks.pth
 
@@ -62,6 +59,9 @@ RUN mkdir -p /home/jovyan/.local/share/jupyter/kernels/python2 && \
 
 WORKDIR /notebooks
 RUN git clone -b EMBLPredoc2017Notebooks --single-branch https://github.com/eleanorwilliams/idr-notebooks.git /notebooks
+
+# Install version of IDR-PY which is not dependent on geneinfo for entrez ids
+RUN /opt/conda/envs/python2/bin/pip install --upgrade 'git+https://github.com/bramalingam/idr-py@EMBLPredoc2017Notebooks'
 
 # Autodetects jupyterhub and standalone modes
 CMD ["start-notebook.sh"]
