@@ -17,9 +17,6 @@ RUN /opt/conda/envs/python2/bin/pip install omego && \
     echo /opt/omero/OMERO.server/lib/python > \
     /opt/conda/envs/python2/lib/python2.7/site-packages/omero.pth
 
-# Install version of IDR-PY which is not dependent on geneinfo for entrez ids
-RUN /opt/conda/envs/python2/bin/pip install --upgrade 'git+https://github.com/bramalingam/idr-py@EMBLPredoc2017Notebooks'
-
 # scipy-notebook only includes python3 packages
 RUN conda install --name python2 --quiet --yes \
     bokeh \
@@ -47,6 +44,9 @@ RUN conda install --name python2 --quiet --yes -c bioconda zeroc-ice && \
         py2cytoscape \
         pydot \
         tqdm
+
+# Install version of IDR-PY which is not dependent on geneinfo for entrez ids
+RUN /opt/conda/envs/python2/bin/pip install --upgrade 'git+https://github.com/bramalingam/idr-py@EMBLPredoc2017Notebooks'
 
 # Add idr-notebook library to path
 RUN echo /notebooks/library > /opt/conda/envs/python2/lib/python2.7/site-packages/idr-notebooks.pth
